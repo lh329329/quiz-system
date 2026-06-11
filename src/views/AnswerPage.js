@@ -5,6 +5,8 @@ const AnswerPage = {
     return {
       questions, answers: {}, submitted: false, result: null, loading: false,
       timeLeft: questions.length * 120, timer: null,
+      grading: false, gradingDots: 0, gradingTimer: null, displayScore: 0,
+      revealedDetails: [],
     }
   },
   computed: {
@@ -45,10 +47,19 @@ const AnswerPage = {
         <el-button type="primary" @click="submit" :loading="loading" block size="large">提交所有答案</el-button>
       </el-card>
 
+      <!-- Grading animation -->
+      <el-card v-if="grading" class="card-elevated" style="margin-top:20px">
+        <div style="text-align:center;padding:60px 0">
+          <div style="font-size:48px;margin-bottom:16px" class="pulse">&#128300;</div>
+          <h3 style="color:var(--ink-900);margin-bottom:8px">智能批改中{{ '.'.repeat(gradingDots) }}</h3>
+          <p style="color:var(--ink-400);font-size:13px">AI 正在分析你的答案...</p>
+        </div>
+      </el-card>
+
       <el-card v-if="submitted && result" class="card-elevated" style="margin-top:20px">
         <div style="text-align:center;padding:28px 0">
           <div class="score-display" style="font-size:64px;font-weight:800;color:var(--ink-900);line-height:1">
-            {{ result.total_score }}
+            {{ displayScore }}
             <span style="font-size:16px;font-weight:500;color:var(--ink-400)"> / 100</span>
           </div>
           <p style="color:var(--ink-400);margin-top:8px;font-size:14px">共 {{ result.details.length }} 题</p>
@@ -57,24 +68,25 @@ const AnswerPage = {
           </div>
         </div>
         <el-divider />
-        <div v-for="d in result.details" :key="d.question_id"
-             :class="['result-item', d.is_correct===true?'correct':d.is_correct===false?'wrong':'short']">
+        <div v-for="(idx,i) in revealedDetails" :key="result.details[idx].question_id"
+             :class="['result-item', result.details[idx].is_correct===true?'correct':result.details[idx].is_correct===false?'wrong':'short']"
+             style="animation:fadeSlide 0.4s ease both" :style="{'animation-delay':(i*0.08)+'s'}">
           <div style="display:flex;justify-content:space-between;align-items:start">
             <div>
-              <p style="font-weight:600;font-size:14px;margin-bottom:4px">第 {{ d.question_id }} 题</p>
-              <p v-if="d.is_correct!==null" style="font-size:13px;color:var(--ink-600)">
-                你的答案：<b :style="{color:d.is_correct?'var(--emerald)':'var(--ruby)'}">{{ d.user_answer }}</b>
-                <span v-if="!d.is_correct" style="margin-left:8px;color:var(--ink-400)">正确：{{ d.correct_answer }}</span>
+              <p style="font-weight:600;font-size:14px;margin-bottom:4px">第 {{ result.details[idx].question_id }} 题</p>
+              <p v-if="result.details[idx].is_correct!==null" style="font-size:13px;color:var(--ink-600)">
+                你的答案：<b :style="{color:result.details[idx].is_correct?'var(--emerald)':'var(--ruby)'}">{{ result.details[idx].user_answer }}</b>
+                <span v-if="!result.details[idx].is_correct" style="margin-left:8px;color:var(--ink-400)">正确：{{ result.details[idx].correct_answer }}</span>
               </p>
-              <p v-if="d.is_correct===null" style="font-size:13px;color:var(--ink-600)">
-                得分：<b style="color:var(--amber)">{{ d.score }}</b> &middot; {{ d.feedback }}
+              <p v-if="result.details[idx].is_correct===null" style="font-size:13px;color:var(--ink-600)">
+                得分：<b style="color:var(--amber)">{{ result.details[idx].score }}</b> &middot; {{ result.details[idx].feedback }}
               </p>
             </div>
-            <el-tag v-if="d.is_correct===true" type="success" size="small">正确</el-tag>
-            <el-tag v-else-if="d.is_correct===false" type="danger" size="small">错误</el-tag>
-            <el-tag v-else type="warning" size="small">{{ d.score }}分</el-tag>
+            <el-tag v-if="result.details[idx].is_correct===true" type="success" size="small">正确</el-tag>
+            <el-tag v-else-if="result.details[idx].is_correct===false" type="danger" size="small">错误</el-tag>
+            <el-tag v-else type="warning" size="small">{{ result.details[idx].score }}分</el-tag>
           </div>
-          <p v-if="d.analysis" style="color:var(--ink-400);font-size:12px;margin-top:6px">{{ d.analysis }}</p>
+          <p v-if="result.details[idx].analysis" style="color:var(--ink-400);font-size:12px;margin-top:6px">{{ result.details[idx].analysis }}</p>
         </div>
         <el-row :gutter="12" style="margin-top:16px">
           <el-col :span="8"><el-button @click="retry" block size="large">再测一次</el-button></el-col>
@@ -104,11 +116,35 @@ const AnswerPage = {
     },
     async submit() {
       clearInterval(this.timer)
-      this.loading = true
-      const answers = this.questions.map(q => ({ question_id: q.id, answer: this.answers[q.id] || "" }))
-      try { const res = await api.submit({ answers }); this.result = res.data; this.submitted = true }
-      catch (e) { ElementPlus.ElMessage.error("提交失败") }
-      this.loading = false
+      this.loading = true; this.grading = true
+      // Animated grading dots
+      this.gradingTimer = setInterval(() => { this.gradingDots = (this.gradingDots + 1) % 4 }, 400)
+      try {
+        const answers = this.questions.map(q => ({ question_id: q.id, answer: this.answers[q.id] || "" }))
+        const res = await api.submit({ answers })
+        this.result = res.data
+        await this.animateResults()
+        this.submitted = true
+      } catch (e) { ElementPlus.ElMessage.error("提交失败") }
+      this.loading = false; this.grading = false
+      clearInterval(this.gradingTimer)
+    },
+    async animateResults() {
+      this.revealedDetails = []
+      // Score count-up
+      const target = this.result.total_score
+      const duration = 800, steps = 30
+      const inc = target / steps
+      for (let i = 0; i <= steps; i++) {
+        this.displayScore = Math.round(inc * i)
+        await new Promise(r => setTimeout(r, duration / steps))
+      }
+      this.displayScore = target
+      // Staggered reveal details
+      for (let i = 0; i < this.result.details.length; i++) {
+        await new Promise(r => setTimeout(r, 150))
+        this.revealedDetails.push(i)
+      }
     }
   }
 }
