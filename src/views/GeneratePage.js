@@ -2,11 +2,11 @@ const GeneratePage = {
   data() {
     return { text: "", count: 5, types: ["choice", "judge", "short"], loading: false, file: null, fileName: "", dragOver: false }
   },
-  template: `<div style="max-width:700px;margin:60px auto;padding:0 20px">
-      <el-card class="hover-card" style="border-radius:12px">
-        <h3 style="margin-bottom:20px">生成题目</h3>
+  template: `<div class="page-wrap">
+      <h3 style="font-size:18px;font-weight:700;margin-bottom:24px;color:var(--ink-900)">&#9997; 生成题目</h3>
+      <el-card class="card-elevated">
         <el-form label-position="top">
-          <el-row :gutter="16">
+          <el-row :gutter="20">
             <el-col :span="12"><el-form-item label="题目数量"><el-input-number v-model="count" :min="1" :max="20" /></el-form-item></el-col>
             <el-col :span="12"><el-form-item label="题型选择">
               <el-checkbox-group v-model="types">
@@ -15,22 +15,22 @@ const GeneratePage = {
                 <el-checkbox label="short">简答题</el-checkbox>
               </el-checkbox-group></el-form-item></el-col>
           </el-row>
-          <el-form-item label="知识点文本（输入文本 或 上传文件）">
-            <el-input v-model="text" type="textarea" :rows="4" placeholder="输入知识点内容，如：牛顿三大定律是经典力学的基础..." />
+          <el-form-item label="知识点文本">
+            <el-input v-model="text" type="textarea" :rows="4" placeholder="输入知识点内容，如：牛顿三大定律是经典力学的基础..." resize="none" />
           </el-form-item>
-          <el-form-item label="或上传文件（支持 .txt / .docx / .pdf）">
+          <el-form-item label="或上传文件（.txt / .docx / .pdf）">
             <div :class="['upload-zone', dragOver && 'active']"
                  @click="$refs.fileInput.click()"
                  @dragover.prevent="dragOver=true"
                  @dragleave="dragOver=false"
                  @drop.prevent="onDrop">
               <input ref="fileInput" type="file" accept=".txt,.docx,.pdf,.doc" style="display:none" @change="onFileChange" />
-              <div v-if="!fileName" style="color:#909399">
-                <div style="font-size:32px;margin-bottom:8px">📁</div>
-                <div>点击选择文件 或 拖拽文件到此处</div>
+              <div v-if="!fileName">
+                <div class="upload-icon">&#128196;</div>
+                <div class="upload-text">点击选择文件 或 拖拽文件到此处</div>
               </div>
-              <div v-else style="color:#409EFF;font-weight:600">
-                📄 {{ fileName }} <el-button text size="small" @click.stop="file=null;fileName=''">移除</el-button>
+              <div v-else style="font-weight:600;color:var(--amber)">
+                &#128206; {{ fileName }} <el-button text size="small" @click.stop="file=null;fileName=''">移除</el-button>
               </div>
             </div>
           </el-form-item>

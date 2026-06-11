@@ -3,96 +3,319 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>智能题目生成与自动批改系统</title>
+<title>QuizLab · 智能题目系统</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus/dist/index.css">
 <style>
+/* ═════════════════════ GLOBAL: Ink + Amber Palette ═════════════════════ */
+:root {
+  --ink-950: #0f1117;
+  --ink-900: #1a1d27;
+  --ink-800: #252833;
+  --ink-700: #363a47;
+  --ink-600: #4b505e;
+  --ink-400: #7f8493;
+  --ink-300: #aeb3c0;
+  --ink-200: #d0d3db;
+  --ink-100: #e8eaef;
+  --ink-50: #f4f5f7;
+  --amber: #e8983e;
+  --amber-light: #f5d7a7;
+  --amber-bg: #fef7ee;
+  --emerald: #3ba585;
+  --emerald-bg: #edf8f4;
+  --ruby: #d94a5d;
+  --ruby-bg: #fdf0f2;
+}
+
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Microsoft YaHei','PingFang SC',sans-serif;background:#f0f2f5}
+body{
+  font-family: 'PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif;
+  background: var(--ink-50);
+  color: var(--ink-900);
+  -webkit-font-smoothing: antialiased;
+  line-height:1.6;
+}
 #app{min-height:100vh}
 
-/* Login page */
-.login-bg {
+/* Override Element Plus */
+:root{
+  --el-color-primary: var(--ink-800);
+  --el-color-primary-light-3: var(--ink-600);
+  --el-color-primary-light-5: var(--ink-400);
+  --el-color-primary-light-7: var(--ink-200);
+  --el-color-primary-light-8: var(--ink-100);
+  --el-color-primary-light-9: var(--ink-50);
+  --el-color-success: var(--emerald);
+  --el-color-danger: var(--ruby);
+  --el-color-warning: var(--amber);
+  --el-border-radius-base: 10px;
+  --el-border-radius-small: 6px;
+}
+.el-button--primary{
+  --el-button-bg-color: var(--ink-900);
+  --el-button-border-color: var(--ink-900);
+  --el-button-hover-bg-color: var(--ink-700);
+  --el-button-hover-border-color: var(--ink-700);
+  font-weight:600;letter-spacing:0.3px;
+}
+.el-button--primary:hover{box-shadow:0 4px 16px rgba(15,17,23,0.2);transform:translateY(-1px)}
+.el-card{border:1px solid var(--ink-100) !important;box-shadow:0 1px 3px rgba(0,0,0,0.04) !important}
+.el-tabs__active-bar{background:var(--ink-800) !important}
+.el-tabs__item.is-active{color:var(--ink-900) !important;font-weight:600}
+.el-tag{font-weight:500}
+.el-input__wrapper{box-shadow:0 0 0 1px var(--ink-200) inset !important}
+.el-input__wrapper:hover{box-shadow:0 0 0 1px var(--ink-400) inset !important}
+
+/* ═════════════════════ NAV: Glass + Border ═════════════════════ */
+.nav-header{
+  background:rgba(255,255,255,0.8);backdrop-filter:blur(20px) saturate(1.5);
+  border-bottom:1px solid var(--ink-100);
+  padding:14px 28px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.nav-brand{font-size:17px;font-weight:700;color:var(--ink-900);letter-spacing:-0.3px}
+.nav-brand span{color:var(--amber);margin-right:4px}
+.nav-links{display:flex;gap:6px}
+.nav-links button{font-size:13px !important;color:var(--ink-600) !important;padding:6px 16px !important;border-radius:8px !important}
+.nav-links button:hover{background:var(--ink-100) !important;color:var(--ink-900) !important}
+.nav-links button.active{background:var(--ink-900) !important;color:#fff !important}
+
+/* ═════════════════════ CARDS: Layer Shadow + Hover Lift ═════════════════════ */
+.card-elevated{
+  background:#fff;border:1px solid var(--ink-100);border-radius:14px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.04);
+  transition: all 0.3s cubic-bezier(.22,1,.36,1);
+}
+.card-elevated:hover{
+  transform:translateY(-2px);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.08);
+}
+
+/* ═════════════════════ LOGIN: Premium White ═════════════════════ */
+.login-bg{
   display:flex;justify-content:center;align-items:center;min-height:100vh;
-  background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);
+  background:linear-gradient(160deg,#f8f9fc 0%,#eef1f5 30%,#f5f3f0 60%,#f8f9fc 100%);
   position:relative;overflow:hidden;
 }
-.floating-circle {
-  position:absolute;border-radius:50%;background:rgba(255,255,255,0.1);
-  animation:floatUp linear infinite;
+/* Subtle gradient orbs */
+.login-orbs{position:absolute;inset:0;pointer-events:none;z-index:0}
+.login-orb{
+  position:absolute;border-radius:50%;filter:blur(80px);opacity:0.5;
+  animation:orbDrift 12s ease-in-out infinite alternate;
 }
-@keyframes floatUp {
-  0%{transform:translateY(100vh) scale(0)}
-  100%{transform:translateY(-100px) scale(1.5)}
+.login-orb:nth-child(1){
+  width:500px;height:500px;background:rgba(232,152,62,0.12);
+  top:-15%;left:-10%;animation-delay:0s;
 }
-.login-glow {
-  position:absolute;width:300px;height:300px;border-radius:50%;
-  background:radial-gradient(circle,rgba(64,158,255,0.15),transparent 70%);
-  transform:translate(-50%,-50%);pointer-events:none;transition:opacity 0.3s;
-  opacity:0;
+.login-orb:nth-child(2){
+  width:400px;height:400px;background:rgba(59,165,133,0.1);
+  bottom:-10%;right:-8%;animation-delay:-4s;animation-duration:15s;
 }
-.login-bg:hover .login-glow{opacity:1}
-.login-card {
-  width:440px;border-radius:16px;background:rgba(255,255,255,0.95) !important;
-  backdrop-filter:blur(20px);animation:cardIn 0.6s cubic-bezier(.22,1,.36,1);
-  position:relative;z-index:1;
+.login-orb:nth-child(3){
+  width:300px;height:300px;background:rgba(54,58,71,0.06);
+  top:50%;left:60%;animation-delay:-8s;animation-duration:10s;
 }
-@keyframes cardIn {
-  from{opacity:0;transform:translateY(30px)}
-  to{opacity:1;transform:translateY(0)}
-}
-.login-logo{text-align:center;font-size:24px;font-weight:700;color:#303133;margin-bottom:6px}
-.login-desc{text-align:center;font-size:13px;color:#909399;margin-bottom:20px}
-.login-tabs{margin-bottom:8px}
-.login-btn{background:linear-gradient(135deg,#409EFF,#337ecc) !important;border:none !important;font-weight:600}
-.login-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(64,158,255,0.3)}
-.login-error{color:#f56c6c;text-align:center;margin-top:12px;font-size:13px}
-
-/* Card hover animation */
-.hover-card {
-  transition:transform 0.3s cubic-bezier(.22,1,.36,1),box-shadow 0.3s;
-}
-.hover-card:hover {
-  transform:translateY(-3px);box-shadow:0 8px 25px rgba(0,0,0,0.08);
+@keyframes orbDrift{
+  0%{transform:translate(0,0) scale(1)}
+  100%{transform:translate(60px,-40px) scale(1.2)}
 }
 
-/* Answer page countdown */
-.countdown-bar {
-  display:flex;align-items:center;gap:8px;padding:12px 16px;
-  background:#fff;border-radius:8px;margin-bottom:16px;
-  border:1px solid #ebeef5;position:sticky;top:0;z-index:10;
+/* Interactive spotlight */
+.login-spotlight{
+  position:absolute;width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(232,152,62,0.08) 0%,transparent 60%);
+  transform:translate(-50%,-50%);pointer-events:none;z-index:0;
+  transition:opacity 0.5s;opacity:0;
 }
-.countdown-bar.warning {border-color:#f56c6c;background:#fef0f0}
+.login-bg:hover .login-spotlight{opacity:1}
 
-/* Result score animation */
-@keyframes scorePop {
-  0%{transform:scale(0);opacity:0}
-  60%{transform:scale(1.15)}
-  100%{transform:scale(1);opacity:1}
+/* Floating geometric shapes */
+.login-shape{
+  position:absolute;z-index:0;pointer-events:none;
+  animation:shapeFloat 20s linear infinite;
 }
-.score-num{animation:scorePop 0.6s cubic-bezier(.22,1,.36,1)}
+.login-shape:nth-child(1){
+  width:80px;height:80px;border:2px solid rgba(232,152,62,0.15);border-radius:18px;
+  top:12%;left:8%;animation-delay:0s;transform:rotate(15deg);
+}
+.login-shape:nth-child(2){
+  width:50px;height:50px;border-radius:50%;background:rgba(59,165,133,0.08);
+  top:70%;right:10%;animation-delay:-7s;
+}
+.login-shape:nth-child(3){
+  width:60px;height:60px;border:2px solid rgba(54,58,71,0.08);border-radius:30% 70% 50% 50%;
+  top:25%;right:18%;animation-delay:-14s;transform:rotate(45deg);
+}
+@keyframes shapeFloat{
+  0%{transform:translateY(0) rotate(0deg)}
+  25%{transform:translateY(-30px) rotate(90deg)}
+  50%{transform:translateY(0) rotate(180deg)}
+  75%{transform:translateY(20px) rotate(270deg)}
+  100%{transform:translateY(0) rotate(360deg)}
+}
 
-/* File upload zone */
-.upload-zone {
-  border:2px dashed #dcdfe6;border-radius:12px;padding:30px;
+/* Card */
+.login-card{
+  width:460px;border-radius:24px !important;
+  background:rgba(255,255,255,0.85) !important;
+  backdrop-filter:blur(30px) saturate(1.2);
+  border:1px solid rgba(0,0,0,0.06) !important;
+  box-shadow:0 4px 6px rgba(0,0,0,0.02),0 10px 40px rgba(0,0,0,0.06) !important;
+  animation:cardSlideIn 0.7s cubic-bezier(.22,1,.36,1);
+  position:relative;z-index:1;padding:8px;transition:transform 0.3s,box-shadow 0.3s;
+}
+.login-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 12px rgba(0,0,0,0.03),0 20px 60px rgba(0,0,0,0.1) !important;
+}
+@keyframes cardSlideIn{
+  from{opacity:0;transform:translateY(48px) scale(0.94)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+/* Tab switch animation */
+.login-tabs{margin-bottom:4px}
+.login-tabs .el-tabs__item{
+  font-size:15px !important;transition:all 0.3s !important;
+}
+.login-tabs .el-tabs__active-bar{background:var(--amber) !important;height:3px !important;border-radius:2px}
+
+/* Logo */
+.login-logo{
+  text-align:center;font-size:28px;font-weight:800;color:var(--ink-900);
+  letter-spacing:-0.5px;margin-bottom:6px;
+}
+.login-logo .accent{color:var(--amber)}
+.login-desc{text-align:center;font-size:13px;color:var(--ink-400);margin-bottom:28px}
+
+/* Inputs */
+.login-card .el-input__wrapper{
+  background:rgba(0,0,0,0.02) !important;
+  box-shadow:0 0 0 1px rgba(0,0,0,0.08) inset !important;
+  border-radius:12px !important;transition:all 0.3s !important;
+}
+.login-card .el-input__wrapper:hover{
+  box-shadow:0 0 0 1px rgba(0,0,0,0.15) inset !important;
+}
+.login-card .el-input__wrapper.is-focus{
+  box-shadow:0 0 0 2px rgba(232,152,62,0.25) inset !important;
+  background:#fff !important;
+}
+.login-card .el-input__inner{font-size:15px !important}
+
+/* Button */
+.login-btn{
+  background:var(--ink-900) !important;border:none !important;
+  color:#fff !important;font-weight:700 !important;font-size:16px !important;
+  letter-spacing:0.5px;border-radius:14px !important;height:48px !important;
+  transition:all 0.3s !important;position:relative;overflow:hidden;
+}
+.login-btn::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,transparent 0%,rgba(255,255,255,0.1) 50%,transparent 100%);
+  transform:translateX(-100%);
+}
+.login-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 30px rgba(15,17,23,0.25) !important;
+}
+.login-btn:hover::after{transform:translateX(100%);transition:transform 0.6s}
+.login-btn:active{transform:translateY(0)}
+.login-btn.is-loading{background:var(--ink-600) !important}
+
+.login-error{color:var(--ruby);text-align:center;margin-top:14px;font-size:13px;background:#fdf0f2;padding:8px 16px;border-radius:10px}
+
+/* ═════════════════════ PAGE LAYOUT ═════════════════════ */
+.page-wrap{max-width:760px;margin:0 auto;padding:36px 24px 60px}
+
+/* ═════════════════════ QUESTION CARDS ═════════════════════ */
+.question-item{
+  background:#fff;border:1px solid var(--ink-100);border-radius:12px;
+  padding:20px;margin-bottom:14px;
+  transition:border-color 0.2s;
+}
+.question-item:focus-within{border-color:var(--ink-400)}
+.question-number{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border-radius:8px;
+  background:var(--ink-100);color:var(--ink-700);
+  font-size:13px;font-weight:600;margin-bottom:10px;
+}
+
+/* ═════════════════════ COUNTDOWN ═════════════════════ */
+.countdown-bar{
+  display:flex;align-items:center;gap:10px;padding:14px 18px;
+  background:#fff;border-radius:12px;margin-bottom:20px;
+  border:1px solid var(--ink-100);
+  position:sticky;top:80px;z-index:10;
+  box-shadow:0 1px 3px rgba(0,0,0,0.04);
+}
+.countdown-bar.warning{border-color:var(--ruby);background:var(--ruby-bg)}
+.countdown-time{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.countdown-label{font-size:13px;color:var(--ink-400);flex:1}
+
+/* ═════════════════════ SCORE ═════════════════════ */
+@keyframes scorePop{
+  0%{transform:scale(0) rotate(-10deg);opacity:0}
+  60%{transform:scale(1.1) rotate(3deg)}
+  100%{transform:scale(1) rotate(0);opacity:1}
+}
+.score-display{animation:scorePop 0.7s cubic-bezier(.22,1,.36,1)}
+
+/* ═════════════════════ RESULT DETAIL ═════════════════════ */
+.result-item{
+  padding:14px 18px;border-radius:10px;margin-bottom:10px;
+  position:relative;overflow:hidden;
+}
+.result-item::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:0 3px 3px 0;
+}
+.result-item.correct{background:var(--emerald-bg)} .result-item.correct::before{background:var(--emerald)}
+.result-item.wrong{background:var(--ruby-bg)} .result-item.wrong::before{background:var(--ruby)}
+.result-item.short{background:var(--amber-bg)} .result-item.short::before{background:var(--amber)}
+
+/* ═════════════════════ UPLOAD ZONE ═════════════════════ */
+.upload-zone{
+  border:2px dashed var(--ink-200);border-radius:14px;padding:36px;
   text-align:center;cursor:pointer;transition:all 0.3s;
-  background:#fafafa;
+  background:var(--ink-50);
 }
-.upload-zone:hover{border-color:#409EFF;background:#f0f7ff}
-.upload-zone.active{border-color:#409EFF;background:#f0f7ff}
+.upload-zone:hover{border-color:var(--amber);background:var(--amber-bg)}
+.upload-zone.active{border-color:var(--amber);background:var(--amber-bg)}
+.upload-icon{font-size:36px;margin-bottom:10px;color:var(--ink-400)}
+.upload-text{color:var(--ink-400);font-size:13px}
+
+/* ═════════════════════ HISTORY TABLE ═════════════════════ */
+.history-card{padding:12px !important}
+.empty-state{
+  text-align:center;padding:48px 0;color:var(--ink-400);
+}
+.empty-state .emoji{font-size:48px;margin-bottom:12px}
+.empty-state p{font-size:14px}
+
+/* ═════════════════════ PULSE INDICATOR ═════════════════════ */
+@keyframes softPulse{
+  0%,100%{opacity:1}
+  50%{opacity:0.5}
+}
+.pulse{animation:softPulse 2s ease-in-out infinite}
+
+/* ═════════════════════ MOBILE ═════════════════════ */
+@media(max-width:640px){
+  .page-wrap{padding:20px 16px 40px}
+  .login-card{width:92%;margin:0 16px}
+  .nav-header{padding:12px 16px}.nav-links button{font-size:12px !important;padding:5px 12px !important}
+}
 </style>
 </head>
 <body>
-<div id="app">
-  <router-view></router-view>
-</div>
+<div id="app"><router-view></router-view></div>
 
-<!-- Vue ecosystem as global scripts (no ESM import hell) -->
 <script src="https://cdn.jsdelivr.net/npm/vue@3.4/dist/vue.global.prod.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vue-router@4/dist/vue-router.global.prod.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/element-plus@2/dist/index.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios@1/dist/axios.min.js"></script>
 
-<!-- App code -->
 <script src="/src/api/index.js"></script>
 <script src="/src/views/LoginPage.js"></script>
 <script src="/src/views/GeneratePage.js"></script>
