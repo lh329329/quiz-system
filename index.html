@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能题目生成与自动批改系统</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus/dist/index.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei','PingFang SC',sans-serif;background:#f0f2f5}
+#app{min-height:100vh}
+
+/* Login page */
+.login-bg {
+  display:flex;justify-content:center;align-items:center;min-height:100vh;
+  background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);
+  position:relative;overflow:hidden;
+}
+.floating-circle {
+  position:absolute;border-radius:50%;background:rgba(255,255,255,0.1);
+  animation:floatUp linear infinite;
+}
+@keyframes floatUp {
+  0%{transform:translateY(100vh) scale(0)}
+  100%{transform:translateY(-100px) scale(1.5)}
+}
+.login-glow {
+  position:absolute;width:300px;height:300px;border-radius:50%;
+  background:radial-gradient(circle,rgba(64,158,255,0.15),transparent 70%);
+  transform:translate(-50%,-50%);pointer-events:none;transition:opacity 0.3s;
+  opacity:0;
+}
+.login-bg:hover .login-glow{opacity:1}
+.login-card {
+  width:440px;border-radius:16px;background:rgba(255,255,255,0.95) !important;
+  backdrop-filter:blur(20px);animation:cardIn 0.6s cubic-bezier(.22,1,.36,1);
+  position:relative;z-index:1;
+}
+@keyframes cardIn {
+  from{opacity:0;transform:translateY(30px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.login-logo{text-align:center;font-size:24px;font-weight:700;color:#303133;margin-bottom:6px}
+.login-desc{text-align:center;font-size:13px;color:#909399;margin-bottom:20px}
+.login-tabs{margin-bottom:8px}
+.login-btn{background:linear-gradient(135deg,#409EFF,#337ecc) !important;border:none !important;font-weight:600}
+.login-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(64,158,255,0.3)}
+.login-error{color:#f56c6c;text-align:center;margin-top:12px;font-size:13px}
+
+/* Card hover animation */
+.hover-card {
+  transition:transform 0.3s cubic-bezier(.22,1,.36,1),box-shadow 0.3s;
+}
+.hover-card:hover {
+  transform:translateY(-3px);box-shadow:0 8px 25px rgba(0,0,0,0.08);
+}
+
+/* Answer page countdown */
+.countdown-bar {
+  display:flex;align-items:center;gap:8px;padding:12px 16px;
+  background:#fff;border-radius:8px;margin-bottom:16px;
+  border:1px solid #ebeef5;position:sticky;top:0;z-index:10;
+}
+.countdown-bar.warning {border-color:#f56c6c;background:#fef0f0}
+
+/* Result score animation */
+@keyframes scorePop {
+  0%{transform:scale(0);opacity:0}
+  60%{transform:scale(1.15)}
+  100%{transform:scale(1);opacity:1}
+}
+.score-num{animation:scorePop 0.6s cubic-bezier(.22,1,.36,1)}
+
+/* File upload zone */
+.upload-zone {
+  border:2px dashed #dcdfe6;border-radius:12px;padding:30px;
+  text-align:center;cursor:pointer;transition:all 0.3s;
+  background:#fafafa;
+}
+.upload-zone:hover{border-color:#409EFF;background:#f0f7ff}
+.upload-zone.active{border-color:#409EFF;background:#f0f7ff}
+</style>
+</head>
+<body>
+<div id="app">
+  <router-view></router-view>
+</div>
+
+<!-- Vue ecosystem as global scripts (no ESM import hell) -->
+<script src="https://cdn.jsdelivr.net/npm/vue@3.4/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue-router@4/dist/vue-router.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/element-plus@2/dist/index.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios@1/dist/axios.min.js"></script>
+
+<!-- App code -->
+<script src="/src/api/index.js"></script>
+<script src="/src/views/LoginPage.js"></script>
+<script src="/src/views/GeneratePage.js"></script>
+<script src="/src/views/AnswerPage.js"></script>
+<script src="/src/views/HistoryPage.js"></script>
+<script src="/src/App.js"></script>
+<script src="/src/main.js"></script>
+</body>
+</html>
